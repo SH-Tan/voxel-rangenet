@@ -206,7 +206,7 @@ class VoxelRCNNHead(RoIHeadTemplate):
     @staticmethod
     def get_dense_grid_points(rois, batch_size_rcnn, grid_size):
         faked_features = rois.new_ones((grid_size, grid_size, grid_size))
-        dense_idx = faked_features.nonzero()  # (N, 3) [x_idx, y_idx, z_idx]
+        dense_idx = faked_features.nonzero(as_tuple=False)  # (N, 3) [x_idx, y_idx, z_idx]
         dense_idx = dense_idx.repeat(batch_size_rcnn, 1, 1).float()  # (B, 6x6x6, 3)
 
         local_roi_size = rois.view(batch_size_rcnn, -1)[:, 3:6]

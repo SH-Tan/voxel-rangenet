@@ -1,1 +1,12 @@
 python -m pcdet.datasets.kitti.kitti_dataset create_kitti_infos tools/cfgs/dataset_configs/kitti_dataset.yaml
+
+
+TOKEN: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
+
+range:
+
+data_dict['range'] = out_dict['range']
+data_dict['range_xyz'] = out_dict['ori_xyz']
+data_dict['range_r'] = out_dict['ori_r']
+data_dict['range_idx'] = out_dict['idx']
+data_dict['range_mask'] = out_dict['mask']

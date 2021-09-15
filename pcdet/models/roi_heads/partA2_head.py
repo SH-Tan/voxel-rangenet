@@ -182,7 +182,7 @@ class PartA2FCHead(RoIHeadTemplate):
 
         # transform to sparse tensors
         sparse_shape = np.array(pooled_part_features.shape[1:4], dtype=np.int32)
-        sparse_idx = pooled_part_features.sum(dim=-1).nonzero()  # (non_empty_num, 4) ==> [bs_idx, x_idx, y_idx, z_idx]
+        sparse_idx = pooled_part_features.sum(dim=-1).nonzero(as_tuple=False)  # (non_empty_num, 4) ==> [bs_idx, x_idx, y_idx, z_idx]
         if sparse_idx.shape[0] < 3:
             sparse_idx = self.fake_sparse_idx(sparse_idx, batch_size_rcnn)
             if self.training:

@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils import data
 
 
 class BaseBEVBackbone(nn.Module):
@@ -85,11 +86,38 @@ class BaseBEVBackbone(nn.Module):
                 spatial_features
         Returns:
         """
-        spatial_features = data_dict['spatial_features']
+
+        # up_in = nn.functional.interpolate(in_f, scale_factor=(2,2), mode='bilinear', align_corners=True) # 双线性插值上采样
+        '''
+        range_f_1 = data_dict['range_bev_conv1'] # B*128*400*352
+        range_f_2 = data_dict['range_bev_conv2'] # B*128*200*176
+
+        spatial_features = data_dict['spatial_features']# B*256*200*176
+
+        temp_cat_f = torch.cat((range_f_2,spatial_features), dim=1) # B*(256+128)*200*176
+        up_temp_cat_f = nn.functional.interpolate(temp_cat_f, scale_factor=(2,2), mode='bilinear', align_corners=True) # 双线性插值上采样 B*(256+128)*400*352
+        cat_f = torch.cat((range_f_1,up_temp_cat_f), dim=1) # B*512*400*352
+
+        cur_layers = [
+                    nn.Conv2d(512, 256, kernel_size=(3,3), stride=(1,1), bias=False, padding=1),
+                    nn.Dropout2d(p=0.2),
+                    nn.MaxPool2d((2,2), stride=2),
+                    nn.BatchNorm2d(256, eps=1e-3, momentum=0.01),
+                    nn.ReLU()
+                ]
+
+        pool_f = nn.Sequential(*cur_layers)
+
+        spatial_features = pool_f(cat_f)
+        '''
+
+        spatial_features = data_dict['bev_fusion_out']# B*256*200*176
+
         ups = []
         ret_dict = {}
         x = spatial_features
         for i in range(len(self.blocks)):
+            # print(x.shape)
             x = self.blocks[i](x)
 
             stride = int(spatial_features.shape[2] / x.shape[2])

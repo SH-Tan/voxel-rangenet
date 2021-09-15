@@ -14,8 +14,8 @@ def get_git_commit_number():
 
     cmd_out = subprocess.run(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE)
     git_commit_number = cmd_out.stdout.decode('utf-8')[:7]
-    print(git_commit_number)
-    input()
+    # print(git_commit_number)
+    # input()
     return git_commit_number
 
 

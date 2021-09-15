@@ -679,10 +679,10 @@ def gaussian_focal_loss(pred, gaussian_target, alpha=2.0, gamma=4.0):
             factor. Defaults to 4.0.
     """
     eps = 1e-12
-    pos_weights = gaussian_target.eq(1)
-    neg_weights = (1 - gaussian_target).pow(gamma)
-    pos_loss = (-(pred + eps).log() * (1 - pred).pow(alpha) * pos_weights).contiguous()
-    neg_loss = -(1 - pred + eps).log() * pred.pow(alpha) * neg_weights
+    pos_weights = gaussian_target.eq(1).contiguous()
+    neg_weights = (1 - gaussian_target).pow(gamma).contiguous()
+    pos_loss = (-(pred + eps).log().contiguous() * (1 - pred).pow(alpha).contiguous() * pos_weights).contiguous()
+    neg_loss = (-(1 - pred + eps).log().contiguous() * pred.pow(alpha).contiguous() * neg_weights).contiguous()
     return pos_loss + neg_loss
 
 @weighted_loss

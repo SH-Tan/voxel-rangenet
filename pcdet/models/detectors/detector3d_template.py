@@ -4,9 +4,10 @@ import torch
 import torch.nn as nn
 
 from ...ops.iou3d_nms import iou3d_nms_utils
-from .. import backbones_2d, backbones_3d, dense_heads, roi_heads
+from .. import backbones_2d, backbones_3d, dense_heads, roi_heads, rangenet, bev_fusion
 from ..backbones_2d import map_to_bev
 from ..backbones_3d import pfe, vfe
+from ..rangenet import rv2bev, range_bev
 from ..model_utils import model_nms_utils
 
 
@@ -20,7 +21,7 @@ class Detector3DTemplate(nn.Module):
         self.register_buffer('global_step', torch.LongTensor(1).zero_())
 
         self.module_topology = [
-            'vfe', 'backbone_3d', 'map_to_bev_module', 'pfe',
+            'vfe', 'backbone_3d', 'range', 'range2bev', 'range2d', 'map_to_bev_module', 'bev_fusion', 'pfe',
             'backbone_2d', 'dense_head',  'point_head', 'roi_head'
         ]
 
@@ -81,6 +82,40 @@ class Detector3DTemplate(nn.Module):
             if hasattr(backbone_3d_module, 'backbone_channels') else None
         return backbone_3d_module, model_info_dict
 
+    def build_range(self, model_info_dict):
+        if self.model_cfg.get('RANGE', None) is None:
+            return None, model_info_dict
+
+        range_module = rangenet.__all__[self.model_cfg.RANGE.NAME](
+            model_cfg=self.model_cfg.RANGE,
+            input_channels=self.model_cfg.RANGE.INPUT_CHANNEL,
+        )
+        model_info_dict['module_list'].append(range_module)
+        # model_info_dict['range_num_point_features'] = range_module.num_point_features
+        model_info_dict['range_backbone_channels'] = range_module.backbone_channels \
+            if hasattr(range_module, 'backbone_channels') else None
+        return range_module, model_info_dict
+
+    def build_range2bev(self, model_info_dict):
+        if self.model_cfg.get('RV2BEV', None) is None:
+            return None, model_info_dict
+
+        range2bev_module = rv2bev.__all__[self.model_cfg.RV2BEV.NAME](
+            model_cfg=self.model_cfg.RV2BEV
+        )
+        model_info_dict['module_list'].append(range2bev_module)
+        return range2bev_module, model_info_dict
+
+    def build_range2d(self, model_info_dict):
+        if self.model_cfg.get('RV_BEV', None) is None:
+            return None, model_info_dict
+
+        range_bev_module = range_bev.__all__[self.model_cfg.RV_BEV.NAME](
+            model_cfg=self.model_cfg.RV_BEV
+        )
+        model_info_dict['module_list'].append(range_bev_module)
+        return range_bev_module, model_info_dict
+
     def build_map_to_bev_module(self, model_info_dict):
         if self.model_cfg.get('MAP_TO_BEV', None) is None:
             return None, model_info_dict
@@ -92,6 +127,16 @@ class Detector3DTemplate(nn.Module):
         model_info_dict['module_list'].append(map_to_bev_module)
         model_info_dict['num_bev_features'] = map_to_bev_module.num_bev_features
         return map_to_bev_module, model_info_dict
+
+    def build_bev_fusion(self, model_info_dict):
+        if self.model_cfg.get('BEV_FUSION', None) is None:
+            return None, model_info_dict
+
+        fusion_bev_module = bev_fusion.__all__[self.model_cfg.BEV_FUSION.NAME](
+            model_cfg=self.model_cfg.BEV_FUSION
+        )
+        model_info_dict['module_list'].append(fusion_bev_module)
+        return fusion_bev_module, model_info_dict
 
     def build_backbone_2d(self, model_info_dict):
         if self.model_cfg.get('BACKBONE_2D', None) is None:

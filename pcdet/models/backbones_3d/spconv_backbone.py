@@ -108,7 +108,7 @@ class VoxelBackBone8x(nn.Module):
         last_pad = 0
         last_pad = self.model_cfg.get('last_pad', last_pad)
         self.conv_out = spconv.SparseSequential(
-            # [200, 150, 5] -> [200, 150, 2]
+            # [200, 176, 5] -> [200, 176, 2]
             spconv.SparseConv3d(64, 128, (3, 1, 1), stride=(2, 1, 1), padding=last_pad,
                                 bias=False, indice_key='spconv_down2'),
             norm_fn(128),
@@ -136,6 +136,7 @@ class VoxelBackBone8x(nn.Module):
                 encoded_spconv_tensor: sparse tensor
         """
         voxel_features, voxel_coords = batch_dict['voxel_features'], batch_dict['voxel_coords']
+
         batch_size = batch_dict['batch_size']
         input_sp_tensor = spconv.SparseConvTensor(
             features=voxel_features,
@@ -153,7 +154,7 @@ class VoxelBackBone8x(nn.Module):
 
         # for detection head
         # [200, 176, 5] -> [200, 176, 2]
-        out = self.conv_out(x_conv4)
+        out = self.conv_out(x_conv4) # B*128*2*200*176
 
         batch_dict.update({
             'encoded_spconv_tensor': out,

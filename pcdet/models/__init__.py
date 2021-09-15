@@ -2,6 +2,7 @@ from collections import namedtuple
 
 import numpy as np
 import torch
+# from torch._C import float32
 
 from .detectors import build_detector
 
@@ -38,7 +39,15 @@ def model_fn_decorator():
     ModelReturn = namedtuple('ModelReturn', ['loss', 'tb_dict', 'disp_dict'])
 
     def model_func(model, batch_dict):
+
         load_data_to_gpu(batch_dict)
+
+        bc = batch_dict['batch_size']
+
+        # batch_dict['range_scan'] = np.array(batch_dict['range_scan'], dtype=np.float32)
+        
+        
+        
         ret_dict, tb_dict, disp_dict = model(batch_dict)
 
         loss = ret_dict['loss'].mean()

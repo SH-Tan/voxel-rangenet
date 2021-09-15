@@ -2,8 +2,10 @@ from functools import partial
 
 import numpy as np
 from skimage import transform
+from torch.utils import data
 
 from ...utils import box_utils, common_utils
+from . import laserscan
 
 
 class DataProcessor(object):
@@ -45,6 +47,7 @@ class DataProcessor(object):
         return data_dict
 
     def transform_points_to_voxels(self, data_dict=None, config=None, voxel_generator=None):
+        # print(data_dict is None)
         if data_dict is None:
             try:
                 from spconv.utils import VoxelGeneratorV2 as VoxelGenerator
@@ -61,7 +64,8 @@ class DataProcessor(object):
             self.grid_size = np.round(grid_size).astype(np.int64)
             self.voxel_size = config.VOXEL_SIZE
             return partial(self.transform_points_to_voxels, voxel_generator=voxel_generator)
-
+        # print('voxel = ', voxel_generator)
+        # input()
         points = data_dict['points']
         voxel_output = voxel_generator.generate(points)
         if isinstance(voxel_output, dict):
@@ -76,6 +80,26 @@ class DataProcessor(object):
         data_dict['voxels'] = voxels
         data_dict['voxel_coords'] = coordinates
         data_dict['voxel_num_points'] = num_points
+        return data_dict
+
+
+    def transform_points_to_range(self, data_dict=None, config=None):
+        if data_dict is None:
+            return partial(self.transform_points_to_range, config=config)
+        
+        points = data_dict['points']
+        rangeset = laserscan.LaserScan(project=True, H=config.H, W=config.W, fov_up=config.fov_up, fov_down=config.fov_down)
+        out_dict = rangeset.open_scan(points)
+
+        data_dict['range'] = out_dict['range']
+        data_dict['range_xyz'] = out_dict['ori_xyz']
+        data_dict['range_r'] = out_dict['ori_r']
+        # data_dict['range_idx'] = out_dict['idx']
+        # data_dict['range_mask'] = out_dict['mask']
+        data_dict['range_scan'] = out_dict['ori_points']
+        data_dict['range_y'] = out_dict['p_y']
+        data_dict['range_x'] = out_dict['p_x']
+
         return data_dict
 
     def sample_points(self, data_dict=None, config=None):

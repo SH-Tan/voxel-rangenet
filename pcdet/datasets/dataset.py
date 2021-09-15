@@ -169,6 +169,25 @@ class DatasetTemplate(torch_data.Dataset):
             try:
                 if key in ['voxels', 'voxel_num_points']:
                     ret[key] = np.concatenate(val, axis=0)
+
+                elif key in ['range_scan']:
+                    max_n = max([len(x) for x in val])
+                    poi = []
+                    for i, p in enumerate(val):
+                        pad_l = max_n - len(p)
+                        p_pad = np.pad(p, ((0, pad_l), (0, 0)), mode='constant', constant_values=0)
+                        poi.append(p_pad)
+                    ret[key] = np.stack(poi,axis=0)
+
+                elif key in [ 'range_y', 'range_x']:
+                    max_n = max([len(x) for x in val])
+                    poi = []
+                    for i, p in enumerate(val):
+                        pad_l = max_n - len(p)
+                        p_pad = np.pad(p, ((0, pad_l)), mode='constant', constant_values=0)
+                        poi.append(p_pad)
+                    ret[key] = np.stack(poi,axis=0)
+
                 elif key in ['points', 'voxel_coords']:
                     coors = []
                     for i, coor in enumerate(val):
